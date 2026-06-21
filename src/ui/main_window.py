@@ -374,10 +374,34 @@ class MainWindow(QMainWindow):
     def stop_analysis(self) -> None:
         if self.worker and self.worker.is_running():
             self.worker.stop()
-            self.statusBar().showMessage("已请求停止分析")
-        self.act_stop.setEnabled(False)
-        self.act_analyze.setEnabled(True)
-        self.act_import.setEnabled(True)
+            self.statusBar().showMessage("正在停止分析…")
+            self.act_stop.setEnabled(False)
+            self.act_analyze.setEnabled(False)
+            self.act_import.setEnabled(False)
+            self._stop_poll_timer = QTimer(self)
+            self._stop_poll_timer.timeout.connect(self._check_stopped)
+            self._stop_poll_timer.start(50)
+        else:
+            self.act_stop.setEnabled(False)
+            self.act_analyze.setEnabled(True)
+            self.act_import.setEnabled(True)
+
+    def _check_stopped(self) -> None:
+        if not self.worker or not self.worker.is_running():
+            self._stop_poll_timer.stop()
+            if hasattr(self, '_stop_poll_timer'):
+                delattr(self, '_stop_poll_timer')
+            if self._current_match:
+                if self._current_match.status.value == "cancelled":
+                    msg = "分析已取消"
+                elif self._current_match.status.value == "done":
+                    msg = "分析已完成"
+                else:
+                    msg = "分析已停止"
+                self.statusBar().showMessage(msg, 4000)
+            self._refresh_matches()
+            self.act_analyze.setEnabled(True)
+            self.act_import.setEnabled(True)
 
     def open_config(self) -> None:
         dlg = ConfigDialog(self.config, self)
@@ -410,6 +434,9 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "分析错误", payload.get("message", "未知错误"))
 
     def _on_analysis_done(self, match: MatchMetadata) -> None:
+        if hasattr(self, '_stop_poll_timer') and self._stop_poll_timer.isActive():
+            self._stop_poll_timer.stop()
+            delattr(self, '_stop_poll_timer')
         self.db.upsert_match(match)
         self._refresh_matches()
         self.progress_bar.setValue(100)
@@ -429,6 +456,9 @@ class MainWindow(QMainWindow):
         self.tabs.setCurrentWidget(self.report_viewer)
 
     def _on_analysis_failed(self, message: str) -> None:
+        if hasattr(self, '_stop_poll_timer') and self._stop_poll_timer.isActive():
+            self._stop_poll_timer.stop()
+            delattr(self, '_stop_poll_timer')
         self.act_analyze.setEnabled(True)
         self.act_stop.setEnabled(False)
         self.act_import.setEnabled(True)

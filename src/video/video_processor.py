@@ -62,10 +62,11 @@ class VideoProcessor:
         video_path: str,
         match_id: str,
         on_progress: Optional[Callable[[int, int], None]] = None,
+        should_stop: Optional[Callable[[], bool]] = None,
     ) -> List[Dict]:
         if not video_path or "<test-data>" in video_path or not os.path.isfile(video_path):
             log.info("未提供真实录像，生成演示帧序列: %s", video_path)
-            return self.generate_demo_frames(match_id)
+            return self.generate_demo_frames(match_id, should_stop=should_stop)
 
         info = self.probe(video_path)
         out_dir = os.path.join(self.frames_dir, match_id)
@@ -83,6 +84,10 @@ class VideoProcessor:
         saved = 0
         try:
             while True:
+                if should_stop and should_stop():
+                    log.info("抽帧已取消 match=%s", match_id)
+                    cap.release()
+                    return frames_info
                 ok, frame = cap.read()
                 if not ok:
                     break
@@ -165,12 +170,16 @@ class VideoProcessor:
         match_id: str,
         count: int = 30,
         duration_sec: float = 1830.0,
+        should_stop: Optional[Callable[[], bool]] = None,
     ) -> List[Dict]:
         out_dir = os.path.join(self.frames_dir, match_id)
         os.makedirs(out_dir, exist_ok=True)
         frames_info: List[Dict] = []
         ts_step = duration_sec / count if count else 0.0
         for i in range(count):
+            if should_stop and should_stop():
+                log.info("演示帧生成已取消 match=%s", match_id)
+                return frames_info
             ts = i * ts_step
             img = self._render_demo_frame(i, count)
             fname = f"frame_{i:06d}.jpg"

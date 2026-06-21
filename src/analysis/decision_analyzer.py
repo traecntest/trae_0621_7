@@ -12,7 +12,7 @@ from __future__ import annotations
 import random
 import uuid
 from datetime import datetime
-from typing import List
+from typing import Callable, List, Optional
 
 from ..core.config import AppConfig
 from ..core.exceptions import AnalysisError
@@ -71,14 +71,25 @@ class DecisionAnalyzer:
 
     # --------------------------------------------------------------- public
     def analyze(
-        self, match: MatchMetadata, frame_states: List[FrameState]
+        self,
+        match: MatchMetadata,
+        frame_states: List[FrameState],
+        should_stop: Optional[Callable[[], bool]] = None,
+        on_progress: Optional[Callable[[int, int], None]] = None,
     ) -> AnalysisResult:
         rng = random.Random(match.match_id)
         if not frame_states:
             frame_states = self._synth_timeline(match, rng)
 
-        events = self._derive_events(match, frame_states, rng)
-        decisions = self._derive_decisions(match, frame_states, rng)
+        total = len(frame_states) * 2
+        events = self._derive_events(match, frame_states, rng, should_stop,
+                                     on_progress=lambda cur: on_progress(cur, total) if on_progress else None)
+        if should_stop and should_stop():
+            return AnalysisResult(match_id=match.match_id, events=[], decisions=[], overall_score=0.0, summary="分析已取消")
+        decisions = self._derive_decisions(match, frame_states, rng, should_stop,
+                                           on_progress=lambda cur: on_progress(len(frame_states) + cur, total) if on_progress else None)
+        if should_stop and should_stop():
+            return AnalysisResult(match_id=match.match_id, events=[], decisions=[], overall_score=0.0, summary="分析已取消")
         overall_score = self._score(decisions)
         summary = self._build_summary(match, events, decisions, overall_score)
 
@@ -118,11 +129,16 @@ class DecisionAnalyzer:
         match: MatchMetadata,
         frame_states: List[FrameState],
         rng: random.Random,
+        should_stop: Optional[Callable[[], bool]] = None,
+        on_progress: Optional[Callable[[int], None]] = None,
     ) -> List[GameEvent]:
         n = min(len(_EVENT_TEMPLATES), len(frame_states))
         chosen = rng.sample(range(len(frame_states)), n)
         events: List[GameEvent] = []
         for idx, frame_idx in enumerate(sorted(chosen)):
+            if should_stop and should_stop():
+                log.info("事件分析已取消 match=%s", match.match_id)
+                return []
             frame = frame_states[frame_idx]
             cat, title, tpl = _EVENT_TEMPLATES[idx % len(_EVENT_TEMPLATES)]
             detail = self._detail_for(cat, rng)
@@ -149,6 +165,8 @@ class DecisionAnalyzer:
                     screenshot_path=frame.screenshot_path or "",
                 )
             )
+            if on_progress:
+                on_progress(idx + 1)
         events.sort(key=lambda e: e.timestamp)
         return events
 
@@ -169,11 +187,16 @@ class DecisionAnalyzer:
         match: MatchMetadata,
         frame_states: List[FrameState],
         rng: random.Random,
+        should_stop: Optional[Callable[[], bool]] = None,
+        on_progress: Optional[Callable[[int], None]] = None,
     ) -> List[Decision]:
         n = min(len(_DECISION_TEMPLATES), len(frame_states))
         chosen = rng.sample(range(len(frame_states)), n)
         decisions: List[Decision] = []
         for idx, frame_idx in enumerate(sorted(chosen)):
+            if should_stop and should_stop():
+                log.info("决策分析已取消 match=%s", match.match_id)
+                return []
             frame = frame_states[frame_idx]
             atype, intent, evl, reasoning, base = _DECISION_TEMPLATES[
                 idx % len(_DECISION_TEMPLATES)
@@ -199,6 +222,8 @@ class DecisionAnalyzer:
                     frame_idx=frame.frame_idx,
                 )
             )
+            if on_progress:
+                on_progress(idx + 1)
         decisions.sort(key=lambda d: d.timestamp)
         return decisions
 

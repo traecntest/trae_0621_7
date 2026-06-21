@@ -83,7 +83,13 @@ class AnalysisPipeline:
                     on_progress, 0.05 + 0.20 * (cur / max(1, total)),
                     f"抽取帧 {cur}/{total}", match, on_event, db,
                 ),
+                should_stop=lambda: self._stop.is_set(),
             )
+            if self._stop.is_set():
+                match.status = MatchStatus.CANCELLED
+                match.progress = 0.25
+                db.upsert_match(match)
+                return
 
             self._emit(on_progress, 0.28, "检测游戏 UI 元素", match, on_event, db)
             frame_states: List[FrameState] = []
@@ -100,12 +106,33 @@ class AnalysisPipeline:
                     f"视觉识别 {i+1}/{total}", match, on_event, db,
                 )
 
+            if self._stop.is_set():
+                match.status = MatchStatus.CANCELLED
+                db.upsert_match(match)
+                return
+
             self._emit(on_progress, 0.62, "调用决策分析", match, on_event, db)
-            result: AnalysisResult = self.analyzer.analyze(match, frame_states)
+            result: AnalysisResult = self.analyzer.analyze(
+                match, frame_states,
+                should_stop=lambda: self._stop.is_set(),
+                on_progress=lambda cur, total: self._emit(
+                    on_progress, 0.62 + 0.20 * (cur / max(1, total)),
+                    f"决策分析 {cur}/{total}", match, on_event, db,
+                ),
+            )
+            if self._stop.is_set():
+                match.status = MatchStatus.CANCELLED
+                db.upsert_match(match)
+                return
             for ev in result.events:
                 db.insert_event(ev)
             for dc in result.decisions:
                 db.insert_decision(match.match_id, dc)
+
+            if self._stop.is_set():
+                match.status = MatchStatus.CANCELLED
+                db.upsert_match(match)
+                return
 
             self._emit(on_progress, 0.85, "生成复盘报告", match, on_event, db)
             report_path = self.reporter.generate(
