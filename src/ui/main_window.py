@@ -231,6 +231,7 @@ class MainWindow(QMainWindow):
         if not match:
             return
         self._current_match = match
+        self._ensure_frames(match)
         events = self.db.get_events(match_id)
         decisions = self.db.get_decisions(match_id)
         self.timeline.set_data(match.duration_sec, events)
@@ -243,6 +244,15 @@ class MainWindow(QMainWindow):
             self.report_viewer.clear()
         self._update_time_label(0.0)
         self.progress_bar.setValue(int(match.progress * 100))
+        self._show_frame_at(0.0)
+        status_map = {
+            MatchStatus.PENDING: "等待分析（点击“开始分析”）",
+            MatchStatus.RUNNING: f"分析中… {match.progress:.0%}",
+            MatchStatus.DONE: "分析完成",
+            MatchStatus.FAILED: "分析失败",
+            MatchStatus.CANCELLED: "已取消",
+        }
+        self.statusBar().showMessage(status_map.get(match.status, match.status.value), 5000)
 
     def _populate_events(self, events: List[GameEvent]) -> None:
         self.event_table.setRowCount(0)
@@ -282,7 +292,6 @@ class MainWindow(QMainWindow):
         player_name, ok = self._prompt_text("玩家名称", "Player1")
         if not ok:
             return
-        mode, _ = AnalysisMode.PROFESSIONAL, None
         match = MatchMetadata(
             match_id=f"match-{uuid.uuid4().hex[:8]}",
             game_name=game_name,
@@ -294,13 +303,35 @@ class MainWindow(QMainWindow):
         )
         try:
             from ..video.video_processor import VideoProcessor
-            info = VideoProcessor(self.config).probe(path)
-            match.duration_sec = info["duration_sec"]
+            vp = VideoProcessor(self.config)
+            info = vp.probe(path)
+            match.duration_sec = info["duration_sec"] or 0.0
         except Exception:
             match.duration_sec = 0.0
+        if match.duration_sec <= 0:
+            match.duration_sec = 1800.0
         self.db.upsert_match(match)
+        try:
+            from ..video.video_processor import VideoProcessor
+            vp = VideoProcessor(self.config)
+            if os.path.isfile(path):
+                vp.extract_frames(path, match.match_id)
+            else:
+                count = min(180, max(30, int(match.duration_sec * self.config.frame_sample_fps)))
+                count = min(count, int(match.duration_sec / 5))
+                vp.generate_demo_frames(
+                    match.match_id, count=count, duration_sec=match.duration_sec
+                )
+        except Exception as exc:
+            self.statusBar().showMessage(f"抽帧失败: {exc}", 5000)
         self._refresh_matches()
-        self.statusBar().showMessage(f"已导入: {game_name}", 4000)
+        for i in range(self.match_tree.topLevelItemCount()):
+            item = self.match_tree.topLevelItem(i)
+            if item.data(0, Qt.UserRole) == match.match_id:
+                self.match_tree.setCurrentItem(item)
+                self._on_match_selected(item)
+                break
+        self.statusBar().showMessage(f"已导入: {game_name}（点击“开始分析”生成复盘报告）", 6000)
 
     def start_analysis(self) -> None:
         if self.worker and self.worker.is_running():
@@ -321,8 +352,14 @@ class MainWindow(QMainWindow):
             if ret != QMessageBox.Yes:
                 return
         match.status = MatchStatus.RUNNING
-        match.progress = 0.0
+        match.progress = 0.02
+        if match.duration_sec <= 0:
+            match.duration_sec = 1800.0
+        self._ensure_frames(match)
         self.db.upsert_match(match)
+        self.progress_bar.setValue(2)
+        self.statusBar().showMessage("正在初始化分析…")
+        self._refresh_matches()
         self.worker = AnalysisWorker(self.config, self)
         self.worker.progress.connect(self._on_progress)
         self.worker.event.connect(self._on_pipeline_event)
@@ -331,6 +368,7 @@ class MainWindow(QMainWindow):
         self.worker.start(match)
         self.act_analyze.setEnabled(False)
         self.act_stop.setEnabled(True)
+        self.act_import.setEnabled(False)
         self.statusBar().showMessage("分析进行中…可最小化窗口继续其他工作")
 
     def stop_analysis(self) -> None:
@@ -339,6 +377,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("已请求停止分析")
         self.act_stop.setEnabled(False)
         self.act_analyze.setEnabled(True)
+        self.act_import.setEnabled(True)
 
     def open_config(self) -> None:
         dlg = ConfigDialog(self.config, self)
@@ -362,6 +401,9 @@ class MainWindow(QMainWindow):
     def _on_progress(self, value: float, message: str) -> None:
         self.progress_bar.setValue(int(value * 100))
         self.statusBar().showMessage(message)
+        if self._current_match:
+            self._current_match.progress = value
+            self._current_match.status = MatchStatus.RUNNING
 
     def _on_pipeline_event(self, kind: str, payload: dict) -> None:
         if kind == "error":
@@ -374,6 +416,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("分析完成", 5000)
         self.act_analyze.setEnabled(True)
         self.act_stop.setEnabled(False)
+        self.act_import.setEnabled(True)
         self._current_match = match
         if match.report_path:
             self.report_viewer.load(match.report_path)
@@ -388,7 +431,11 @@ class MainWindow(QMainWindow):
     def _on_analysis_failed(self, message: str) -> None:
         self.act_analyze.setEnabled(True)
         self.act_stop.setEnabled(False)
+        self.act_import.setEnabled(True)
         self.statusBar().showMessage(f"分析失败: {message}", 6000)
+        if self._current_match:
+            self._current_match.status = MatchStatus.FAILED
+            self._refresh_matches()
 
     # ---------------------------------------------------------- timeline / play
     def _on_timeline_seek(self, seconds: float) -> None:
@@ -435,15 +482,34 @@ class MainWindow(QMainWindow):
         self.timeline.set_position(seconds)
         self._update_time_label(seconds)
         frames_dir = os.path.join(self.config.frames_dir, self._current_match.match_id)
+        path = self._find_nearest_frame(frames_dir, seconds)
+        if path is None:
+            self._ensure_frames(self._current_match)
+            path = self._find_nearest_frame(frames_dir, seconds)
         idx = int(seconds * self.config.frame_sample_fps)
-        candidates = [
-            os.path.join(frames_dir, f"frame_{idx:06d}.jpg"),
-            os.path.join(frames_dir, f"frame_{min(idx, 999999):06d}.jpg"),
-        ]
-        path = next((p for p in candidates if os.path.isfile(p)), None)
         from ..vision.ui_detector import UIDetector
         state = UIDetector(self.config).detect(path or "<none>", idx, seconds)
         self.video_player.show_frame(path, state)
+
+    def _find_nearest_frame(self, frames_dir: str, seconds: float) -> Optional[str]:
+        if not os.path.isdir(frames_dir):
+            return None
+        frames = sorted(f for f in os.listdir(frames_dir) if f.startswith("frame_") and f.endswith(".jpg"))
+        if not frames:
+            return None
+        target_idx = int(seconds * self.config.frame_sample_fps)
+        best: Optional[str] = None
+        best_diff = float("inf")
+        for fname in frames:
+            try:
+                idx = int(fname[6:12])
+                diff = abs(idx - target_idx)
+                if diff < best_diff:
+                    best_diff = diff
+                    best = fname
+            except (ValueError, IndexError):
+                continue
+        return os.path.join(frames_dir, best) if best else None
 
     def _update_time_label(self, seconds: float) -> None:
         dur = self._current_match.duration_sec if self._current_match else 0.0
@@ -479,6 +545,25 @@ class MainWindow(QMainWindow):
             self.db.upsert_match(match)
         except Exception as exc:
             self.statusBar().showMessage(f"报告生成失败: {exc}", 5000)
+
+    def _ensure_frames(self, match: MatchMetadata) -> None:
+        frames_dir = os.path.join(self.config.frames_dir, match.match_id)
+        has_frames = os.path.isdir(frames_dir) and len(os.listdir(frames_dir)) > 0
+        if has_frames:
+            return
+        try:
+            from ..video.video_processor import VideoProcessor
+            vp = VideoProcessor(self.config)
+            if os.path.isfile(match.source_path):
+                vp.extract_frames(match.source_path, match.match_id)
+            else:
+                count = min(180, max(30, int(match.duration_sec * self.config.frame_sample_fps)))
+                count = min(count, int(match.duration_sec / 5))
+                vp.generate_demo_frames(
+                    match.match_id, count=count, duration_sec=match.duration_sec
+                )
+        except Exception as exc:
+            self.statusBar().showMessage(f"准备帧失败: {exc}", 5000)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if self.worker and self.worker.is_running():
