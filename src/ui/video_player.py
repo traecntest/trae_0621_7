@@ -12,7 +12,7 @@ from typing import List, Optional
 
 import cv2
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen
+from PyQt5.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPixmap
 from PyQt5.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from ..core.models import FrameState, GameEvent
@@ -69,7 +69,7 @@ class VideoPlayerWidget(QWidget):
             scaled = self._qimage.scaled(
                 self._label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
-            self._label.setPixmap(scaled)
+            self._label.setPixmap(QPixmap.fromImage(scaled))
         else:
             self._label.setText("暂无画面\n请选择对局并播放或拖动时间轴")
             self._label.setStyleSheet("color:#888; background-color:#000; border-radius:8px;")
