@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>复盘报告 - 竞技对决：星耀峡谷</title>
+<style>
+* { box-sizing: border-box; }
+body {
+    font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    margin: 0; padding: 0; background: #f5f6fa; color: #2c3e50; line-height: 1.6;
+}
+.report-header {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 28px 32px; position: relative;
+}
+.report-header h1 { margin: 0 0 12px 0; font-size: 26px; }
+.score-box {
+    position: absolute; top: 24px; right: 32px; text-align: center;
+    background: rgba(255,255,255,0.15); padding: 12px 20px; border-radius: 10px; font-size: 13px;
+}
+.score-value { font-size: 30px; font-weight: bold; }
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 24px; max-width: 760px; }
+.info-item { display: flex; flex-direction: column; }
+.info-label { font-size: 12px; opacity: 0.75; }
+.info-value { font-size: 15px; font-weight: 500; word-break: break-all; }
+.summary {
+    margin-top: 14px; max-width: 900px; background: rgba(255,255,255,0.12);
+    padding: 12px 16px; border-radius: 8px;
+}
+section {
+    background: #fff; margin: 18px auto; max-width: 1100px; padding: 20px 24px;
+    border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+section h2 { margin-top: 0; border-left: 4px solid #2a5298; padding-left: 10px; }
+.empty { color: #999; font-style: italic; }
+.timeline-list { border-left: 2px solid #d0d7de; margin-left: 8px; padding-left: 16px; }
+.timeline-item { display: flex; margin-bottom: 18px; position: relative; }
+.timeline-time {
+    width: 64px; flex-shrink: 0; font-weight: bold; color: #2a5298; padding-top: 2px;
+}
+.timeline-time::before {
+    content: ""; position: absolute; left: -23px; top: 8px;
+    width: 10px; height: 10px; border-radius: 50%; background: #2a5298; border: 2px solid #fff;
+}
+.timeline-content { flex: 1; }
+.timeline-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.event-title { font-weight: 600; }
+.event-desc { margin: 4px 0; color: #4a5568; }
+.badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; color: #fff; white-space: nowrap;
+}
+.badge-teamfight { background: #c62828; }
+.badge-laning { background: #1565c0; }
+.badge-resource_control { background: #2e7d32; }
+.badge-objective { background: #6a1b9a; }
+.badge-roaming { background: #ef6c00; }
+.badge-general { background: #607d8b; }
+.screenshot, .screenshot-placeholder {
+    max-width: 480px; margin-top: 8px; border-radius: 6px; display: block;
+}
+.screenshot { border: 1px solid #e1e4e8; }
+.screenshot-placeholder {
+    background: #f0f2f5; border: 2px dashed #c2c7d0;
+    padding: 24px; text-align: center; color: #8a94a6; font-size: 13px;
+}
+.categories .decisions { background: #fbfcfd; margin: 10px 0 0 0; box-shadow: none; padding: 12px 0; }
+.category-block {
+    border: 1px solid #eaecef; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;
+}
+.category-block h3 {
+    margin-top: 0; color: #1e3c72; display: flex; align-items: center; gap: 12px;
+}
+.section-summary { font-size: 13px; color: #8a94a6; font-weight: normal; }
+.cat-events { margin-bottom: 12px; }
+.cat-event { padding: 8px 0; border-bottom: 1px dashed #eee; }
+.cat-event .event-time { font-weight: bold; color: #2a5298; margin-right: 8px; }
+.cat-event-body { margin-top: 4px; }
+.decision-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+.decision-table th, .decision-table td {
+    border: 1px solid #e1e4e8; padding: 8px 10px; text-align: left;
+}
+.decision-table th { background: #f6f8fa; }
+.decision-table tbody tr:nth-child(even) { background: #fafbfc; }
+.report-footer { text-align: center; color: #8a94a6; padding: 24px; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="report-header">
+<h1>竞技复盘分析报告</h1>
+<div class="score-box">综合评分<br><span class="score-value">78.5</span></div>
+<div class="info-grid"><div class="info-item"><span class="info-label">对局编号</span><span class="info-value">match-ed437d10</span></div><div class="info-item"><span class="info-label">游戏</span><span class="info-value">竞技对决：星耀峡谷</span></div><div class="info-item"><span class="info-label">玩家</span><span class="info-value">ShadowBlade</span></div><div class="info-item"><span class="info-label">时长</span><span class="info-value">30:30</span></div><div class="info-item"><span class="info-label">分析模式</span><span class="info-value">professional</span></div><div class="info-item"><span class="info-label">状态</span><span class="info-value">done</span></div></div>
+<p class="summary">前期对线稳住经济，10分钟小龙团战中技能衔接到位；中期资源控制存在一次决策失误，导致大龙被抢；后期团战站位偏后，依靠前排开团完成翻盘。整体节奏良好，细节仍有提升空间。</p>
+</header>
+<section class="timeline">
+<h2>时间轴</h2>
+<div class="timeline-list"><div class="timeline-item"><div class="timeline-time">00:45</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-laning">对线</span><span class="event-title">对线期补刀节奏</span></div><p class="event-desc">上线后保持稳定补刀，3分钟达到30刀，经济领先对手200金币。</p><div class="screenshot-placeholder">画面截图 · 00:45</div></div></div>
+<div class="timeline-item"><div class="timeline-time">03:00</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-laning">对线</span><span class="event-title">技能消耗换血</span></div><p class="event-desc">利用冷却空档用远程技能消耗，将对方血量压至60%。</p><div class="screenshot-placeholder">画面截图 · 03:00</div></div></div>
+<div class="timeline-item"><div class="timeline-time">05:12</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-resource_control">资源控制</span><span class="event-title">首轮小龙争夺</span></div><p class="event-desc">河道视野提前布控，配合打野拿下第一条小龙。</p><div class="screenshot-placeholder">画面截图 · 05:12</div></div></div>
+<div class="timeline-item"><div class="timeline-time">07:00</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-roaming">游走</span><span class="event-title">中野游走下路</span></div><p class="event-desc">中路支援下路越塔，完成二换二，缓解下路压力。</p><div class="screenshot-placeholder">画面截图 · 07:00</div></div></div>
+<div class="timeline-item"><div class="timeline-time">10:12</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-teamfight">团战</span><span class="event-title">小龙团战爆发</span></div><p class="event-desc">5v5团战先手开团，技能衔接流畅，0换3奠定优势。</p><div class="screenshot-placeholder">画面截图 · 10:12</div></div></div>
+<div class="timeline-item"><div class="timeline-time">13:00</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-resource_control">资源控制</span><span class="event-title">大龙区误判</span></div><p class="event-desc">对方打野存活情况下强开大龙，被抢龙并丢掉两个人头。</p><div class="screenshot-placeholder">画面截图 · 13:00</div></div></div>
+<div class="timeline-item"><div class="timeline-time">16:00</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-objective">目标</span><span class="event-title">推塔节奏</span></div><p class="event-desc">利用对方回城间隙推掉中路一塔，扩大视野纵深。</p><div class="screenshot-placeholder">画面截图 · 16:00</div></div></div>
+<div class="timeline-item"><div class="timeline-time">19:40</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-teamfight">团战</span><span class="event-title">高地防守团</span></div><p class="event-desc">高地塔下4v5防守，靠走位拉扯逐一击破对方进攻。</p><div class="screenshot-placeholder">画面截图 · 19:40</div></div></div>
+<div class="timeline-item"><div class="timeline-time">23:40</div><div class="timeline-content"><div class="timeline-head"><span class="badge badge-teamfight">团战</span><span class="event-title">决胜团战</span></div><p class="event-desc">野区埋伏先秒对方核心输出，顺势推平水晶。</p><div class="screenshot-placeholder">画面截图 · 23:40</div></div></div>
+</div>
+</section>
+<section class="categories">
+<h2>分类分析</h2>
+<div class="category-block" id="cat-teamfight">
+<h3>团战<span class="section-summary">共 3 个事件，3 个决策</span></h3>
+<div class="cat-events">
+<div class="cat-event"><span class="event-time">10:12</span><span class="badge badge-teamfight">团战</span><div class="cat-event-body"><div class="event-title">小龙团战爆发</div><p class="event-desc">5v5团战先手开团，技能衔接流畅，0换3奠定优势。</p><div class="screenshot-placeholder">画面截图 · 10:12</div></div></div>
+<div class="cat-event"><span class="event-time">19:40</span><span class="badge badge-teamfight">团战</span><div class="cat-event-body"><div class="event-title">高地防守团</div><p class="event-desc">高地塔下4v5防守，靠走位拉扯逐一击破对方进攻。</p><div class="screenshot-placeholder">画面截图 · 19:40</div></div></div>
+<div class="cat-event"><span class="event-time">23:40</span><span class="badge badge-teamfight">团战</span><div class="cat-event-body"><div class="event-title">决胜团战</div><p class="event-desc">野区埋伏先秒对方核心输出，顺势推平水晶。</p><div class="screenshot-placeholder">画面截图 · 23:40</div></div></div>
+</div>
+<div class="decisions">
+<h2>相关决策</h2>
+<table class="decision-table">
+<thead><tr><th>时间</th><th>动作</th><th>意图</th><th>评价</th><th>理由</th><th>得分</th></tr></thead>
+<tbody>
+<tr><td>10:12</td><td>技能使用</td><td>团战技能衔接</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>控制链衔接到位，秒杀对方后排。</td><td>0.90</td></tr>
+<tr><td>19:40</td><td>站位</td><td>高地塔拉扯</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>利用塔的射程拉扯，逐个击破。</td><td>0.88</td></tr>
+<tr><td>23:40</td><td>视野控制</td><td>野区埋伏</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>提前排眼并埋伏，成功先手核心。</td><td>0.91</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="category-block" id="cat-laning">
+<h3>对线<span class="section-summary">共 2 个事件，2 个决策</span></h3>
+<div class="cat-events">
+<div class="cat-event"><span class="event-time">00:45</span><span class="badge badge-laning">对线</span><div class="cat-event-body"><div class="event-title">对线期补刀节奏</div><p class="event-desc">上线后保持稳定补刀，3分钟达到30刀，经济领先对手200金币。</p><div class="screenshot-placeholder">画面截图 · 00:45</div></div></div>
+<div class="cat-event"><span class="event-time">03:00</span><span class="badge badge-laning">对线</span><div class="cat-event-body"><div class="event-title">技能消耗换血</div><p class="event-desc">利用冷却空档用远程技能消耗，将对方血量压至60%。</p><div class="screenshot-placeholder">画面截图 · 03:00</div></div></div>
+</div>
+<div class="decisions">
+<h2>相关决策</h2>
+<table class="decision-table">
+<thead><tr><th>时间</th><th>动作</th><th>意图</th><th>评价</th><th>理由</th><th>得分</th></tr></thead>
+<tbody>
+<tr><td>00:45</td><td>站位</td><td>保持安全距离补刀</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>站位靠后避免被先手，补刀效率最大化。</td><td>0.85</td></tr>
+<tr><td>03:00</td><td>技能使用</td><td>消耗换血</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>技能命中率高，成功压制对方血线。</td><td>0.82</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="category-block" id="cat-resource_control">
+<h3>资源控制<span class="section-summary">共 2 个事件，1 个决策</span></h3>
+<div class="cat-events">
+<div class="cat-event"><span class="event-time">05:12</span><span class="badge badge-resource_control">资源控制</span><div class="cat-event-body"><div class="event-title">首轮小龙争夺</div><p class="event-desc">河道视野提前布控，配合打野拿下第一条小龙。</p><div class="screenshot-placeholder">画面截图 · 05:12</div></div></div>
+<div class="cat-event"><span class="event-time">13:00</span><span class="badge badge-resource_control">资源控制</span><div class="cat-event-body"><div class="event-title">大龙区误判</div><p class="event-desc">对方打野存活情况下强开大龙，被抢龙并丢掉两个人头。</p><div class="screenshot-placeholder">画面截图 · 13:00</div></div></div>
+</div>
+<div class="decisions">
+<h2>相关决策</h2>
+<table class="decision-table">
+<thead><tr><th>时间</th><th>动作</th><th>意图</th><th>评价</th><th>理由</th><th>得分</th></tr></thead>
+<tbody>
+<tr><td>13:00</td><td>资源分配</td><td>强开大龙</td><td><span class="eval" style="color:#c62828;font-weight:bold">失误</span></td><td>未确认对方打野位置贸然开龙，被抢风险极高。</td><td>0.30</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="category-block" id="cat-objective">
+<h3>目标<span class="section-summary">共 1 个事件，1 个决策</span></h3>
+<div class="cat-events">
+<div class="cat-event"><span class="event-time">16:00</span><span class="badge badge-objective">目标</span><div class="cat-event-body"><div class="event-title">推塔节奏</div><p class="event-desc">利用对方回城间隙推掉中路一塔，扩大视野纵深。</p><div class="screenshot-placeholder">画面截图 · 16:00</div></div></div>
+</div>
+<div class="decisions">
+<h2>相关决策</h2>
+<table class="decision-table">
+<thead><tr><th>时间</th><th>动作</th><th>意图</th><th>评价</th><th>理由</th><th>得分</th></tr></thead>
+<tbody>
+<tr><td>16:00</td><td>站位</td><td>推塔后撤离</td><td><span class="eval" style="color:#1565c0;font-weight:bold">可接受</span></td><td>推塔后撤离略慢，险被对方包夹。</td><td>0.60</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="category-block" id="cat-roaming">
+<h3>游走<span class="section-summary">共 1 个事件，0 个决策</span></h3>
+<div class="cat-events">
+<div class="cat-event"><span class="event-time">07:00</span><span class="badge badge-roaming">游走</span><div class="cat-event-body"><div class="event-title">中野游走下路</div><p class="event-desc">中路支援下路越塔，完成二换二，缓解下路压力。</p><div class="screenshot-placeholder">画面截图 · 07:00</div></div></div>
+</div>
+</div>
+</section>
+<section class="decisions">
+<h2>决策总表</h2>
+<table class="decision-table">
+<thead><tr><th>时间</th><th>动作</th><th>意图</th><th>评价</th><th>理由</th><th>得分</th></tr></thead>
+<tbody>
+<tr><td>00:45</td><td>站位</td><td>保持安全距离补刀</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>站位靠后避免被先手，补刀效率最大化。</td><td>0.85</td></tr>
+<tr><td>03:00</td><td>技能使用</td><td>消耗换血</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>技能命中率高，成功压制对方血线。</td><td>0.82</td></tr>
+<tr><td>10:12</td><td>技能使用</td><td>团战技能衔接</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>控制链衔接到位，秒杀对方后排。</td><td>0.90</td></tr>
+<tr><td>13:00</td><td>资源分配</td><td>强开大龙</td><td><span class="eval" style="color:#c62828;font-weight:bold">失误</span></td><td>未确认对方打野位置贸然开龙，被抢风险极高。</td><td>0.30</td></tr>
+<tr><td>16:00</td><td>站位</td><td>推塔后撤离</td><td><span class="eval" style="color:#1565c0;font-weight:bold">可接受</span></td><td>推塔后撤离略慢，险被对方包夹。</td><td>0.60</td></tr>
+<tr><td>19:40</td><td>站位</td><td>高地塔拉扯</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>利用塔的射程拉扯，逐个击破。</td><td>0.88</td></tr>
+<tr><td>23:40</td><td>视野控制</td><td>野区埋伏</td><td><span class="eval" style="color:#2e7d32;font-weight:bold">良好</span></td><td>提前排眼并埋伏，成功先手核心。</td><td>0.91</td></tr>
+</tbody>
+</table>
+</section>
+<footer class="report-footer">报告生成时间：2026-06-21 09:12:04</footer>
+</body>
+</html>

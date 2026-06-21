@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "categories": [
+    "teamfight",
+    "laning",
+    "resource_control",
+    "objective",
+    "roaming",
+    "general"
+  ],
+  "action_types": [
+    "positioning",
+    "skill_usage",
+    "item_usage",
+    "resource_allocation",
+    "vision_control"
+  ]
+}
